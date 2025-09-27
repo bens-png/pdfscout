@@ -13,7 +13,7 @@ export default {
       return new Response("unauthorized", { status: 401, headers: cors });
     }
 
-    type In = { text: string; mode: "paragraph" | "bullets" };
+    type In = { text: string; mode: "paragraph" | "bullets" | "normal" | "analogy"};
     const { text, mode } = (await req.json()) as In;
 
     const system = [

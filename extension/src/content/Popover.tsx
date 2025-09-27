@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Pt = { x: number; y: number };
 type Props = { anchor: Pt; text: string; onClose: () => void };
@@ -6,7 +6,8 @@ type Props = { anchor: Pt; text: string; onClose: () => void };
 const API_BASE = "https://plainsight-proxy.pdfscout.workers.dev";
 
 export default function Popover({ anchor, text, onClose }: Props) {
-  const [mode, setMode] = useState<"paragraph" | "bullets">("paragraph");
+  type Mode = "paragraph" | "bullets" | "normal" | "analogy";
+  const [mode, setMode] = useState<Mode>("paragraph");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string>("");
   const [aiText, setAiText] = useState<string>("");
@@ -39,7 +40,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
     }
   }
 
-  useEffect(() => { void runAI(); }, [text, mode]);
+  useEffect(() => { void runAI(); });
 
   const bullets = useMemo(() => {
     if (mode !== "bullets") return [];
@@ -87,9 +88,49 @@ export default function Popover({ anchor, text, onClose }: Props) {
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 10px", borderBottom: "1px solid rgba(0,0,0,.06)" }}>
-        <Tab active={mode === "paragraph"} onClick={() => setMode("paragraph")}>paragraph</Tab>
-        <Tab active={mode === "bullets"} onClick={() => setMode("bullets")}>bullets</Tab>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          padding: "8px 10px",
+          borderBottom: "1px solid rgba(0,0,0,.06)"
+        }}
+      >
+        {/* First dropdown: Summarize/Explain */}
+        <select
+          value={mode === "paragraph" || mode === "bullets" ? "summarize" : "explain"}
+          onChange={(e) => {
+            const v = e.target.value as "summarize" | "explain";
+            if (v === "summarize") {
+              setMode("paragraph"); 
+            } else {
+              setMode("normal"); 
+            }
+          }}
+        >
+          <option value="summarize">summarize</option>
+          <option value="explain">explain</option>
+        </select>
+
+        {/* Second dropdown: depends on first */}
+        {(mode === "paragraph" || mode === "bullets") ? (
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as Mode)}
+          >
+            <option value="paragraph">paragraph</option>
+            <option value="bullets">bullets</option>
+          </select>
+        ) : (
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as Mode)}
+          >
+            <option value="normal">normal</option>
+            <option value="analogy">analogy</option>
+          </select>
+        )}
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={copyOut}
@@ -121,22 +162,5 @@ export default function Popover({ anchor, text, onClose }: Props) {
         )}
       </div>
     </div>
-  );
-}
-
-function Tab({ active, onClick, children }:{active:boolean; onClick:()=>void; children:React.ReactNode}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "6px 10px",
-        borderRadius: 8,
-        border: active ? "1px solid #3b82f6" : "1px solid rgba(0,0,0,.12)",
-        background: active ? "#eaf2ff" : "#f6f6f6",
-        cursor: "pointer"
-      }}
-    >
-      {children}
-    </button>
   );
 }
