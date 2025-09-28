@@ -62,7 +62,7 @@ export default {
 
     const body = {
       // use any model your project allows (you can swap this later)
-      model: "gpt-4.1-mini",
+      model: "gpt-5-nano",
       input: [
         { role: "system", content: system },
         { role: "user", content: `TEXT:\n${text}` }

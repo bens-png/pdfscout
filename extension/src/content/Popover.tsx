@@ -40,7 +40,10 @@ export default function Popover({ anchor, text, onClose }: Props) {
     }
   }
 
-  useEffect(() => { void runAI(); });
+  useEffect(() => {
+      void runAI();
+    }, [text, mode]);
+
 
   const bullets = useMemo(() => {
     if (mode !== "bullets") return [];
