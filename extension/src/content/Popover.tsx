@@ -28,7 +28,7 @@ const inlineSelectBus: EventTarget =
     : new EventTarget());
 
 function InlineSelect({
-  value, onChange, options, style, disabled, label = "Select", trackKey,
+  value, onChange, options, style, disabled, label = "Select", trackKey, darkMode = false
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -37,6 +37,7 @@ function InlineSelect({
   disabled?: boolean;
   label?: string;
   trackKey?: any;
+  darkMode?: boolean;
 }) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -120,9 +121,12 @@ function InlineSelect({
     lineHeight: "22px",
     minHeight: 30,
     padding: "4px 28px 4px 10px", 
-    border: `1px solid ${focus ? "rgba(0,0,0,.20)" : "rgba(0,0,0,.12)"}`,
+    border: darkMode ? `0px` : `1px solid ${focus ? "rgba(0,0,0,.20)" : "rgba(0,0,0,.12)"}`,
     borderRadius: 7,
-    background: "#fff",
+    background: darkMode ? "#777" : "#fff",
+    color: darkMode ? "#fff" : "#111",
+    font: "inherit", 
+    fontSize: 12,
     transition: "box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease",
     boxShadow: focus
       ? "0 0 0 4px rgba(98,127,255,.18), 0 6px 14px rgba(0,0,0,.08)"
@@ -134,14 +138,13 @@ function InlineSelect({
     outline: "none",
     cursor: disabled ? "not-allowed" : "pointer",
     position: "relative",
-    textAlign: "left",
+    textAlign: "center",
     boxSizing: "border-box",
     ...style,
   };
 
   const arrow: CSSProperties = {
-    position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-    width: 16, height: 16, pointerEvents: "none", opacity: .7
+    position: "absolute", right: 8, top: "50%", color: darkMode ? "#fff" : "#111", transform: "translateY(-50%)", width: 16, height: 16, pointerEvents: "none", opacity: .7
   };
 
   return (
@@ -188,7 +191,7 @@ function InlineSelect({
         style={base}
       >
         {options.find(o => o.value === value)?.label ?? "Select"}
-        <svg viewBox="0 0 24 24" style={arrow} fill="none" stroke="#666" strokeWidth="2">
+        <svg viewBox="0 0 24 24" style={arrow} fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
@@ -205,19 +208,21 @@ function InlineSelect({
             position: "fixed",
             left: pos.left,
             top: pos.top,
-            width: pos.width,                   // match trigger width exactly
-            boxSizing: "border-box",            // include border in width
+            width: pos.width, 
+            boxSizing: "border-box", 
             maxHeight: 240,
             overflowY: "auto",
             overflowX: "hidden",
             scrollbarGutter: "stable",
-            background: "#fff",
+            background: darkMode ? "#777" : "#fff",
+            color: darkMode ? "#fff" : "#111",
+            font: "inherit", 
+            fontSize: 12,
             border: "1px solid rgba(0,0,0,.12)",
             borderRadius: 7,
             boxShadow: "0 12px 28px rgba(0,0,0,.18)",
             zIndex: 2147483647,
             willChange: "transform, opacity",
-            // subtle open animation
             opacity: menuShown ? 1 : 0,
             transform: menuShown ? "translateY(0) scale(1)" : "translateY(-4px) scale(0.98)",
             transition: "opacity 140ms ease, transform 140ms ease",
@@ -247,8 +252,7 @@ function InlineSelect({
                 textOverflow: "ellipsis",
                 overflow: "hidden",
                 background: i === hoverIndex ? "rgba(0,0,0,.04)" : "transparent",
-                fontSize: 14,
-                fontWeight: o.value === value ? 600 : 400,
+                fontWeight: o.value === value ? 600 : 200,
                 cursor: "pointer"
               }}
             >
@@ -265,6 +269,7 @@ function InlineSelect({
 export default function Popover({ anchor, text, onClose }: Props) {
   type Mode = "paragraph" | "bullets" | "normal" | "analogy";
   const [mode, setMode] = useState<Mode>("paragraph");
+  const [darkMode, setDarkMode] = useState(false);
 
   // start exactly at the provided anchor; App already adds any extra offset
   const [pos, setPos] = useState<Pt>({ x: anchor.x, y: anchor.y });
@@ -338,8 +343,11 @@ export default function Popover({ anchor, text, onClose }: Props) {
 
   const [gearHover, setGearHover] = useState(false);
   const [gearActive, setGearActive] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const gearStyle: CSSProperties = {
+    position: "relative",
+    isolation: "isolate",
     width: 28,
     height: 28,
     display: "inline-flex",
@@ -349,10 +357,36 @@ export default function Popover({ anchor, text, onClose }: Props) {
     background: gearActive ? "rgba(0,0,0,.06)" : gearHover ? "rgba(0,0,0,.04)" : "transparent",
     boxShadow: gearActive ? "inset 0 1px 2px rgba(0,0,0,.12)" : "none",
     transform: gearActive ? "translateY(1px)" : "none",
-    color: "#555",
+    color: darkMode ? "#fff" : "#666",
     cursor: "pointer",
     transition: "background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease, color 120ms ease",
     userSelect: "none",
+  };
+
+  const menuStyle: CSSProperties = {
+    position: "absolute",
+    top: "calc(100% + 11px)",
+    right: 0,
+    width: 160,
+    boxSizing: "border-box",
+    background: darkMode ? "rgba(80, 80, 80, 1)" : "rgba(255,255,255,1)",
+    border: "1px solid rgba(0,0,0,.12)",
+    borderRadius: 10,
+    boxShadow: "0 10px 24px rgba(0,0,0,.14)",
+    fontSize: 12,
+    padding: 6,
+    zIndex: 50,
+    transformOrigin: "top right",
+    opacity: 1,
+    transform: "translateY(0)",
+    transition: "opacity 140ms ease, transform 140ms ease",
+  };
+
+  const menuStyleHidden: CSSProperties = {
+    ...menuStyle,
+    opacity: 0,
+    transform: "translateY(-4px)",
+    pointerEvents: "none",
   };
 
   const bullets = useMemo(() => {
@@ -379,26 +413,28 @@ export default function Popover({ anchor, text, onClose }: Props) {
         maxWidth: 480,
         minWidth: 323,
         maxHeight: 600,
-        minHeight: 120,
+        minHeight: 160,
         background: "transparent",
-        color: "#111",
+        color: darkMode ? "#fff" : "#111",
         border: "1px solid rgba(6, 4, 4, 0.1)",
         borderRadius: 12,
         boxShadow: "0 12px 28px rgba(0,0,0,.22)",
         fontFamily:
         '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
         fontSize: 14,
+        display: "flex",
+        flexDirection: "column",
         cursor: dragging ? "grabbing" : "default",
         resize: "both",
-        overflow: "auto",
+        overflow: "hidden",
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div style={{ position:"relative" }}>
         <div style={{
           position:"absolute", inset:0, pointerEvents:"none", zIndex:0,
-          background:"rgba(255,255,255,0.55)",
-          backdropFilter:"saturate(160%) blur(10px)",
+          background: darkMode ? "rgba(80, 80, 80, 0.8)" : "rgba(255,255,255,0.55)",
+          backdropFilter:"saturate(200%) blur(20px)",
           WebkitBackdropFilter:"saturate(160%) blur(10px)",
           borderBottom:"1px solid rgba(0,0,0,.06)"
         }}/>
@@ -408,12 +444,13 @@ export default function Popover({ anchor, text, onClose }: Props) {
           style={{
             position:"relative", zIndex:1,
             display:"flex", alignItems:"center", gap:10, padding:"10px 12px",
-            cursor:"grab", userSelect:"none"
+            cursor:"grab", userSelect:"none", flex: "0 0 auto",
           }}
         >
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <InlineSelect
               trackKey={`${pos.x},${pos.y}`}  
+              darkMode={darkMode}
               value={mode === "paragraph" || mode === "bullets" ? "summarize" : "explain"}
               onChange={(v) => setMode(v === "summarize" ? "paragraph" : "normal")}
               options={[
@@ -425,6 +462,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
 
             {(mode === "paragraph" || mode === "bullets") ? (
               <InlineSelect
+                darkMode={darkMode}
                 trackKey={`${pos.x},${pos.y}`}   
                 value={mode}
                 onChange={(v) => setMode(v as Mode)}
@@ -435,6 +473,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
               </InlineSelect>
             ) : (
               <InlineSelect
+                darkMode={darkMode}
                 trackKey={`${pos.x},${pos.y}`}   
                 value={mode}
                 onChange={(v) => setMode(v as Mode)}
@@ -460,16 +499,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
               onMouseUp={() => setGearActive(false)}
               onMouseEnter={() => setGearHover(true)}
               onMouseLeave={() => { setGearHover(false); setGearActive(false); }}
-              onClick={() => {
-                // TODO: open your settings panel/menu here
-                // setSettingsOpen(v => !v)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  // setSettingsOpen(v => !v)
-                }
-              }}
+              onClick={() => { setSettingsOpen(v => !v) }}
             >
               <svg
                 width="16" height="16" viewBox="0 0 24 24"
@@ -479,6 +509,35 @@ export default function Popover({ anchor, text, onClose }: Props) {
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.3l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.39 1.26 1 1.51H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
               </svg>
+              
+              {
+                <div
+                  style={settingsOpen ? menuStyle : menuStyleHidden}
+                  role="menu"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* sample items — wire up as you like */}
+                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input type="checkbox" onChange={() => { setDarkMode(v => !v) }} />
+                    Dark mode
+                  </label>
+                  <button
+                    style={{
+                      marginTop: 6,
+                      background: darkMode ? "#777" : "#f6f7f9",
+                      color: darkMode ? "#fff" : "#111",
+                      border: "1px solid rgba(0,0,0,.12)",
+                      borderRadius: 8,
+                      padding: "6px 8px",
+                      cursor: "pointer",
+                      width: "100%",
+                    }}
+                    onClick={() => setSettingsOpen(false)}
+                  >
+                    Done
+                  </button>
+                </div>
+              }
             </div>
 
             <button
@@ -488,7 +547,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
                 border: "none",
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#666",
+                color: darkMode ? "#fff" : "#666",
                 cursor: "pointer",
                 lineHeight: 1,
               }}
@@ -512,7 +571,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
         </div>
       )}
 
-      <div style={{ background: "#fff", padding: 12, lineHeight: 1.5, height: "100%" }}>
+      <div style={{ background: darkMode ? "#666" : "#fff", padding: 12, lineHeight: 1.5, flex: "1 1 auto", overflow: "auto", width: "100%", minHeight: 0 }}>
         {loading ? (
           <div style={{ opacity: 0.7 }}>thinking…</div>
         ) : mode === "bullets" ? (
