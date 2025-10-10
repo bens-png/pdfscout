@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 type Pt = { x: number; y: number };
 type Props = { anchor: Pt; text: string; onClose: () => void };
 
+const API_BASE = "https://plainsight-proxy.pdfscout.workers.dev";
+
 const ensureInter = () => {
   if (document.getElementById("ps-inter-font")) return;
   const link = document.createElement("link");
@@ -332,9 +334,29 @@ export default function Popover({ anchor, text, onClose }: Props) {
   async function runAI() {
     setErr("");
     setLoading(true);
-    // await new Promise((r) => setTimeout(r, 300)); // fake delay
-    setAiText("⚠️ AI disabled for now (this is just a placeholder).");
-    setLoading(false);
+    setAiText("");
+
+    try {
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-ps-app": "plainsight", // must match Worker check
+        },
+        body: JSON.stringify({ text, mode }),
+      });
+
+      const data: { text?: string; error?: string } = await res.json();
+      if (data.error) {
+        setErr(data.error);
+        return;
+      }
+      setAiText((data.text ?? "").trim());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -571,7 +593,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
         </div>
       )}
 
-      <div style={{ background: darkMode ? "#666" : "#fff", padding: 12, lineHeight: 1.5, flex: "1 1 auto", overflow: "auto", width: "100%", minHeight: 0 }}>
+      <div style={{ background: darkMode ? "#666" : "#fff", padding: 12, lineHeight: 1.5, flex: "1 1 auto", overflow: "auto", width: "100%", minHeight: 0, boxSizing: "border-box", overflowWrap: "anywhere", wordBreak: "break-word" }}>
         {loading ? (
           <div style={{ opacity: 0.7 }}>thinking…</div>
         ) : mode === "bullets" ? (
@@ -581,7 +603,7 @@ export default function Popover({ anchor, text, onClose }: Props) {
             ))}
           </ul>
         ) : (
-          <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{aiText}</p>
+          <p style={{ margin: 0, whiteSpace: "pre-wrap", textAlign: "justify" }}>{aiText}</p>
         )}
       </div>
     </div>
